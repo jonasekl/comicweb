@@ -1,0 +1,395 @@
+<html>
+    
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8">
+        <link rel="stylesheet" href="/static/css/dojo/demo.css" media="screen">
+        <link rel="stylesheet" href="/static/css/dojo/style.css" media="screen">
+        <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.6/dijit/themes/claro/claro.css"
+        media="screen">
+        <script src="http://ajax.googleapis.com/ajax/libs/dojo/1.6.0/dojo/dojo.xd.js"
+        data-dojo-config="isDebug: true,parseOnLoad: true">
+            
+        </script>
+        <script language="javascript" text="text/javascript" src="/static/jquery.js"></script>
+        <!-- <script langugage="javascript" src="/static/dojo/dojo/dojo.js"></script>-->
+        <link rel "stylesheet" href="/static/css/comicweb_dojo.css" media="screen">
+        <style type="text/css" media="screen">
+            @import url("http://ajax.googleapis.com/ajax/libs/dojo/1.6/dojox/layout/resources/ExpandoPane.css");
+            .thumbnail {
+                padding: 20px;
+                /*border-style: dotted;*/
+                -moz-box-shadow: 10px 10px 5px #888;
+                -webkit-box-shadow: 10px 10px 5px #888;
+                box-shadow: 10px 10px 5px #888;
+            }
+            .thumbnail:hover {
+                -moz-box-shadow: 5px 5px 2px #888;
+                -webkit-box-shadow: 5px 5px 2px #888;
+                box-shadow: 5px 5px 2px #888;
+            }
+            .dojoxExpandoContent {
+                overflow:auto;
+            }
+        </style>
+        <script type="text/javascript" language="javascript">
+            dojo.require("dijit.layout.BorderContainer");
+            dojo.require("dijit.layout.TabContainer");
+            dojo.require("dijit.layout.ContentPane");
+            dojo.require("dojox.layout.ExpandoPane");
+
+            dojo.require("dijit.Tree");
+            dojo.require("dojo.fx.easing");
+            dojo.require("dijit.Dialog");
+            dojo.require("dijit.Tooltip");
+
+            dojo.require("dojo.data.ItemFileReadStore");
+            dojo.require("dojo.data.ItemFileWriteStore");
+            dojo.require("dijit.form.ComboBox");
+            dojo.require("dijit.form.FilteringSelect");
+            dojo.require("dijit.form.CheckBox");
+
+            dojo.require("dijit.layout.ContentPane");
+
+            dojo.require("dijit.Menu");
+            dojo.require("dijit.MenuItem");
+
+
+            dojo.ready(function () {
+                //alert('document is now loaded.');
+                console.log('dojo.ready');
+                obj = dijit.byId("bottomPane");
+                obj.resize({
+                    h: 50
+                });
+                getUserLists();
+                dijit.byId('appLayout').layout();
+            });
+
+            /**
+             *    Global variables
+             */
+            var userLists = [];
+
+            /**
+             *    populates the global variable userlists with values 
+             *    using ajax.
+             */
+            function getUserLists() {
+                dojo.xhrGet({
+                    headers: { 'X-COMICWEB-USER': '{{ user.username }}' },
+                    url: "/resource/json/userlists",
+                    handleAs: "json",
+                    load: function (usrLists) {
+                      userLists = [];
+                      for(var i=0; i<usrLists.length; i++){
+                        userLists.push( usrLists[i] );
+                      }
+                      populateFunctions();
+                    }
+
+                });
+            }
+
+            /**
+             *      sets values in id_functions
+             */
+            function populateFunctions(){
+              var select = dijit.byId('id_functions') //dojo.byId('id_functions');
+              var selectData = {identifier: 'id', items: []};
+              var selectStore = new dojo.data.ItemFileWriteStore({data: selectData});
+              selectStore.newItem({id : 'Functions', name : 'Functions'});
+              selectStore.newItem({id : 'Recent', name : 'Recent'});
+                for (var i=0; i<userLists.length; i++){
+                  selectStore.newItem(userLists[i]);
+//                  console.debug('added option ' + userLists[i].name);
+                }
+                select.set('store', selectStore);
+            }
+
+            /**
+             *  populates content page with a volume list
+             */
+            function populateVolumes(volList) {
+                clearContentPane();
+                var contentPane = dojo.byId("contentPane");
+                if (volList.length == 0) {
+                    contentPane.innerHTML = 'No matching Volumes found';
+                }
+                for (var i = 0; i < volList.length; i++) {
+                    img = dojo.create('img', {
+                        src: "/resource/binary/thumbnail/" + volList[i].latest_issue.id,
+                        class: 'thumbnail',
+                        id: 'volume_' + volList[i].id,
+                        "data-comicweb-id": volList[i].id,
+                        "data-comicweb-name": volList[i].name,
+                        onclick: function (ev) {
+                            var volumeId = dojo.byId(ev.srcElement.id).getAttribute("data-comicweb-id")
+                            dojo.byId("div_thumbs").innerHTML = '[loading issues]';
+                            dojo.xhrGet({
+                                headers: {
+                                    'X-COMICWEB-USER': '{{ user.username }}'
+                                },
+                                url: '/resource/json/issues/' + volumeId,
+                                handleAs: 'json',
+                                load: populateIssues
+                            });
+                        }
+                    }, contentPane);
+
+                    tooltip = new dijit.Tooltip({
+                        connectId: ["volume_" + volList[i].id],
+                        label: "<h3>" + volList[i].name + "</h3>" + volList[i].description,
+                        position: "above"
+                    });
+                }
+            }
+            /**
+             *  populates div_thumbs with a list of issues.
+             */
+            function populateIssues(issueList) {
+                try {
+                    bottomPane = dijit.byId("bottomPane");
+                    bottomPane.resize({
+                        h: 200
+                    });
+                    dijit.byId("appLayout").layout();
+                    dojo.byId("div_thumbs").innerHTML = "";
+                    for (var j = 0; j < issueList.length; j++) {
+                        //                console.log(issueList[j]);
+                        img = dojo.create("img", {
+                            src: "/resource/binary/thumbnail/" + issueList[j].issue.id,
+                            class: "thumbnail",
+                            id: "issue_" + issueList[j].issue.id,
+                            "data-comicweb-id": issueList[j].issue.id,
+                            "data-comicweb-page": (issueList[j]['reading'] == null) ? 0 : issueList[j]['reading'].page,
+                            onclick: function (evt) {
+                                console.log(evt);
+                                var issueId = dojo.byId(evt.srcElement.id).getAttribute("data-comicweb-id");
+                                var page = dojo.byId(evt.srcElement.id).getAttribute("data-comicweb-page");
+                                window.open("/webapp/reader/" + issueId + "/" + page, "win_" + issueId);
+                            }
+                        }, dojo.byId('div_thumbs'), 'first');
+
+                        var volumeId = issueList[j]['issue'].volume;
+                        //                console.log(dojo.byId('volume_' + volumeId).getAttribute('data-comicweb-name'));
+                        _label = "<h3>" + dojo.byId('volume_' + volumeId).getAttribute('data-comicweb-name') + "</h3>Issue:" + issueList[j]['issue'].issue_number + '<br>' + 'Published:' + issueList[j]['issue'].publish_year + '/' + issueList[j]['issue'].publish_month;
+                        if (issueList[j]['reading'] != null) {
+                            _label += "<hr>last read page:" + issueList[j]['reading'].page + "<br>when:" + issueList[j]['reading'].when;
+                        }
+
+                        issueTooltip = new dijit.Tooltip({
+                            connectId: ["issue_" + issueList[j].issue.id],
+                            label: _label,
+                            position: "above"
+                        });
+
+                        contextMenu = new dijit.Menu({
+                            targetNodeIds: ['issue_' + issueList[j].issue.id]
+                        });
+                        contextMenu.addChild(new dijit.MenuItem({
+                            label: "Simple menu item"
+                        }));
+                        contextMenu.addChild(new dijit.MenuItem({
+                            label: 'Read',
+                            id: issueList[j].issue.id + '_menu_read_',
+                            onClick: function (evt) {
+                                var origId = evt.srcElement.id.substring(0, evt.srcElement.id.indexOf('_'));
+                                var issueId = dojo.byId('issue_' + origId).getAttribute("data-comicweb-id");
+                                var page = dojo.byId('issue_' + origId).getAttribute("data-comicweb-page");
+                                window.open("/webapp/reader/" + issueId + "/" + page, "win_" + issueId);
+                            }
+                        }));
+
+                        listMenu = new dijit.Menu();
+                        listMenu.addChild(new dijit.MenuItem({
+                          label: 'new list',
+                          onClick : function( evt ){
+                              console.log(evt);
+                          }
+                        }));
+                        for (var i = 0; i < userLists.length; i++) {
+                            listMenu.addChild(new dijit.MenuItem({
+                                label: userLists[i].name,
+                                'data-comicweb-listid' : userLists[i].id,
+                                onClick: function (evt) {
+                                    console.log('add' + evt + ' to ' + this);
+                                    console.log(dojo.byId(this.id));
+                                    console.log(this.get('data-comicweb-listid'));
+                                }
+                            }));
+                        }
+
+                        contextMenu.addChild(new dijit.MenuItem({
+                            label: 'add to list ...',
+                            popup: listMenu
+                        }));
+                        contextMenu.startup();
+                    }
+                    dijit.byId("appLayout").layout();
+
+                } catch (ex) {
+                    console.log(ex);
+                    alert(ex)
+                }
+            }
+
+            /**
+             *    populates recent list
+             *    TODO: Maybe this ought to populate the div_thumbs (and expand it), instead of contentPane?
+             */
+            function showRecentList() {
+                clearContentPane();
+                dojo.xhrGet({
+                    headers: {
+                        'X-COMICWEB-USER': '{{ user.username }}'
+                    },
+                    url: "/resource/json/recent",
+                    handleAs: "json",
+                    load: function (recentList) {
+                        var contentPane = dojo.byId("contentPane");
+                        for (var i = 0; i < recentList.length; i++) {
+                            img = dojo.create('img', {
+                                src: '/resource/binary/thumbnail/' + recentList[i].issue.id,
+                                class: 'thumbnail',
+                                id: 'issue_' + recentList[i].issue.id,
+                                'data-comicweb-id': recentList[i].issue.id,
+                                'data-comicweb-name': recentList[i].issue.title,
+                                'data-comicweb-page': recentList[i].latest_reading.page,
+                                onclick: function (event) {
+                                    var issueId = dojo.byId(event.srcElement.id).getAttribute('data-comicweb-id');
+                                    var page = dojo.byId(event.srcElement.id).getAttribute('data-comicweb-page');
+                                    window.open('/webapp/reader/' + issueId + '/' + page, 'win_' + issueId);
+                                }
+                            }, contentPane);
+
+                            _label = "<h3>" + recentList[i].volume.name + "</h3>" 
+                              + "</h3>Issue:" + recentList[i].issue.issue_number 
+                              + '<br>' + 'Published:' + recentList[i].issue.publish_year 
+                              + '/' + recentList[i].issue.publish_month + '<br>' 
+                              + '<br>last read: ' + recentList[i].latest_reading.when 
+                              + '<br>' + 'page:' + recentList[i].latest_reading.page;
+                            issueTooltip = new dijit.Tooltip({
+                                connectId: ["issue_" + recentList[i].issue.id],
+                                label: _label,
+                                position: "above"
+                            });
+                        }
+                    }
+                });
+            }
+
+            function clearContentPane() {
+                dojo.byId('contentPane').innerHTML = '';
+            }
+
+            function filterVolumes() {
+                var txtSearchValue = dijit.byId("txtSearch").get('value');
+                if (txtSearchValue.length > 4) {
+                    filterURL = '/resource/json/volumes/?name=' + txtSearchValue;
+                    if (dijit.byId("id_publisher").get("value") != "0") {
+                        filterURL += "&publisher_id=" + dijit.byId("id_publisher").get("value");
+                    }
+                } else {
+                    filterURL = "/resource/json/volumes/?publisher_id=" + dijit.byId("id_publisher").get("value");
+                }
+
+                var onGoing = dijit.byId('chkOngoing').checked;
+                if (onGoing) {
+                    filterURL += '&is_ongoing=1';
+                }
+                var skipSingles = dijit.byId('chkSkipSingles').checked;
+                if (skipSingles) {
+                    filterURL += '&min_issues=2';
+                }
+
+                console.log('filtering volumes with url ' + filterURL);
+                dojo.byId('contentPane').innerHTML = '[loading...]';
+
+
+                dojo.xhrGet({
+                    headers: {
+                        'X-COMICWEB-USER': '{{ user.username }}'
+                    },
+                    url: filterURL,
+                    handleAs: 'json',
+                    load: populateVolumes
+                });
+            }
+        </script>
+        <title>Volume Browser {{ publisher }}</title>
+        
+        <body class="claro">
+            <div id="appLayout" class="demoLayout" data-dojo-type="dijit.layout.BorderContainer"
+            data-dojo-props="design: 'headline'">
+                <div class="edgePanel" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region: 'top'"
+                id="topPane">
+                    <table border="0" width="100%">
+                        <tr>
+                            <td>
+                                <select id="id_functions" data-dojo-type="dijit.form.ComboBox" data-dojo-id="dijit_id_functions">
+                                    <script type="dojo/connect" event="onChange" args="event">
+                                      switch (event) {
+                                        case "Functions":
+                                          break;
+                                        case "Recent":
+                                            showRecentList();
+                                            break;
+                                        default:
+                                          console.log('Me thinks the user selected a list, like '+ event);
+                                        }
+                                        this.set('displayedValue', 'Functions');
+                                    </script>
+                                </select>
+                            </td>
+                            <td>
+                                <div dojoType="dijit.form.TextBox" id="txtSearch">
+                                    <script type="dojo/connect" event="onKeyUp" args="event">
+                                        var val = dijit.byId("txtSearch").get('value');
+                                        if (val.length > 4) {
+                                            filterVolumes();
+                                        }
+                                    </script>
+                                </div>
+                            </td>
+                            <td>
+                                <select id="id_publisher" data-dojo-type="dijit.form.FilteringSelect">
+                                    <script type="dojo/connect" event="onChange" args="event">
+                                        filterVolumes();
+                                    </script>
+                                    <option value="0" selected="selected">All Publishers</option>{% for pub in publishers %}
+                                    <option value="{{ pub.id }}">{{ pub.name }}</option>{% endfor %}</select>
+                            </td>
+                            <td>
+                                <div id="chkOngoing" name="chkOngoing" data-dojo-type="dijit.form.CheckBox"
+                                value="ongoing" checked>
+                                    <script type="dojo/method" event="onClick" args="evt">
+                                        filterVolumes();
+                                    </script>
+                                </div>
+                                <label for="mycheck">Only ongoing</label>
+                                <br>
+                                <div id="chkSkipSingles" name="chkSkipSingles" data-dojo-type="dijit.form.CheckBox"
+                                value="Skip Singles" checked>
+                                    <script type="dojo/method" event="onClick" args="evt">
+                                        filterVolumes();
+                                    </script>
+                                </div>
+                                <label for="mycheck">Skip Singles</label>
+                            </td>
+                            <td style="text-align:right;" align="right">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                <div id="userInfo" style="valign:right">Hi, {{ user.username }}</div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="title: 'Group 1', region:'center'"
+                id="contentPane"></div>
+                <div class="edgePanel" id="bottomPane" data-dojo-type="dojox.layout.ExpandoPane"
+                style="height:200px" data-dojo-props="region:'bottom',title:'issues',showTitle:'true',closable:'true',startExpanded:'false',style:'height:300px',splitter:'true',scrolling:'true'"
+                easeIn="dojo.fx.easing.backOut" easeOut="dojo.fx.easing.backInOut">
+                    <div id="div_thumbs" style="overflow: auto; ">&nbsp;</div>
+                </div>
+            </div>
+        </body>
+
+</html>

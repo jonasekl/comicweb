@@ -1,0 +1,226 @@
+<html>
+<head><title>{{ issue.volume }}</title>
+    <link rel="stylesheet" href="/static/comicweb.css" type="text/css" media="screen"/>
+    <script language="javascript" text="text/javascript" src="/static/jquery.js"></script>
+    <script language="javascript" src="/static/jquery-ui-1.8.13.custom/js/jquery-ui-1.8.13.custom.min.js"></script>
+
+    <link rel="stylesheet" href="/static/prettyPhoto/css/prettyPhoto.css" type="text/css" media="screen"
+          charset="utf-8"/>
+    <script src="/static/prettyPhoto/js/jquery.prettyPhoto.js" type="text/javascript" charset="utf-8">
+    </script>
+    <style>
+        .lnkPage {
+            font-size: 16pt;
+        }
+    </style>
+
+    <!-- jquery UI -->
+    <link rel="stylesheet" href="/static/jquery-ui-1.8.13.custom/development-bundle/themes/base/jquery.ui.all.css">
+    <!--	<script src="../../jquery-1.5.1.js"></script>  -->
+    <script src="/static/jquery-ui-1.8.13.custom/development-bundle/ui/jquery.ui.core.js"></script>
+    <script src="/static/jquery-ui-1.8.13.custom/development-bundle/ui/jquery.ui.widget.js"></script>
+    <script src="/static/jquery-ui-1.8.13.custom/development-bundle/ui/jquery.ui.mouse.js"></script>
+    <script src="/static/jquery-ui-1.8.13.custom/development-bundle/ui/jquery.ui.slider.js"></script>
+    <link rel="stylesheet" href="/static/jquery-ui-1.8.13.custom/development-bundle/demos/demos.css">
+    <style>
+        #demo-frame > div.demo {
+            padding: 10px !important;
+        }
+
+        ;
+    </style>
+    <script language="javascript">
+
+        $(document).ready(function() {
+            $("#fsimg").width('100%');
+            $("area[rel^='prettyPhoto']").prettyPhoto({
+                default_width:  $(window).width() / 2,
+                deeplinking: false
+            });
+            $("#fsimg").load(setupImageMap);
+            $(window).resize(setupImageMap);
+
+
+            $('#imgPrevious').show();
+            $('#imgNext').show();
+            $("#lnkPrevious").click(function() {
+                //window.location.href = '/webapp/reader/{{ issue.id }}/{{ previous_page }}';
+                gotoPage({{ previous_page }});
+                return false;
+            });
+            $("#lnkNext").click(function() {
+                //window.location.href = '/webapp/reader/{{ issue.id }}/{{ next_page }}';
+                gotoPage({{ next_page }});
+                return false;
+            });
+
+            // preload next image
+            var nextImageSrc = "/resource/binary/page/{{ material.id }}/{{ next_page }}";
+            $('<img/>')[0].src = nextImageSrc;
+
+            //handle img error
+            $('#fsimg').error(function(){
+                console.log('image was error, going to next page');
+                gotoPage({{ next_page }});
+                //window.location.href = '/webapp/reader/{{ issue.id }}/{{ next_page }}/';
+            });
+        });
+
+        function getParameterByName(name){
+            name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+            var regexS = "[\\?&]" + name + "=([^&#]*)";
+            var regex = new RegExp(regexS);
+            var results = regex.exec(window.location.search);
+            if(results == null)
+                return "";
+            else
+                return decodeURIComponent(results[1].replace(/\+/g, " "));
+        }
+
+        function gotoPage( sPage ){
+            materialParam = (getParameterByName('material') != '') ? '?material=' + getParameterByName('material') : '';
+
+            window.location.href = '/webapp/reader/{{ issue.id }}/' + sPage + '/' + materialParam;
+        }
+
+        function setupImageMap() {
+            //alert($("#fsimg").height());
+            console.log('setting up imagemap');
+            var thirdWidth = ($("#fsimg").width() / 3);
+            $("#areaBack").attr("coords", "0,0," + thirdWidth + "," + $("#fsimg").height() + "");
+            $("#areaBack").click(function() {
+                scrollLen = $(window).height() - 50;
+                console.log("scrollTop:" + $(window).scrollTop());
+                if ($(window).scrollTop() == 0) {
+                    //window.location.href = "/webapp/reader/{{ issue.id }}/{{ previous_page }}";
+                    gotoPage({{ previous_page }});
+                } else {
+                    window.scrollBy(0, -scrollLen);
+                    return;
+                }
+            });
+
+            $("#areaMenu").attr("coords", "" + thirdWidth + ",0," + (thirdWidth * 2) + "," + $("#fsimg").height() + "");
+
+            $('#menuDiv').dialog({
+                autoOpen: false,
+                show: "blind",
+                hide: "explode"
+            });
+
+            $("#areaMenu").click(function() {
+                $("#menuDiv").show();
+                console.log('i bet you want to see the menu right now.');
+                $('#menuDiv').dialog('open');
+                return false;
+            });
+
+            $("#areaForw").attr("coords", "" + (($("#fsimg").width()) - thirdWidth) + ",0," + ($("#fsimg").width()) + "," + $("#fsimg").height() + "");
+            $("#areaForw").click(function() {
+                //scrollLen = $("#fsimg").height()-50;
+                scrollLen = $(window).height() - 50;
+                //alert("DEBUG:\tscrollLen:"+scrollLen+", scrollTop:"+$(window).scrollTop()+"\nfsimg.height():"+ $("#fsimg").height());
+                if ($(window).scrollTop() + scrollLen + 250 < $("#fsimg").height()) {
+                    console.log($(window).scrollTop() + scrollLen + 100 + "< (fsimg.height)" + $("#fsimg").height());
+                    window.scrollBy(0, scrollLen);
+                    return;
+                } else {
+                    //window.location.href = "/webapp/reader/{{ issue.id }}/{{ next_page }}";
+                    gotoPage({{next_page}});
+                    return;
+                }
+            });
+
+            $('#lnk_close_book').click(function() {
+                $.get('/close/{{ issue.id }}', function(data) {
+                    window.close();
+                });
+                return false;
+            });
+
+            // setup slider
+            
+            $("#slider").slider({
+                min: 0,
+                max: {{ material.get_pagecount }},
+                step: 1,
+                value:{{ page }},
+                slide: function(event, ui) {
+                    $("#pageSlider").val(ui.value);
+                },
+                stop: function(event, ui) {
+                    var initialPage = {{ page }};
+                    var selectedPage = ui.value;
+                    console.log('selectedPage:' + selectedPage);
+                    if (initialPage != selectedPage){
+                        //window.location.href = '../' +  selectedPage;
+                        gotoPage( selectedPage );
+                    }
+                }
+            });
+            $("#pageSlider").val("" + $("#slider").slider("value"));
+            
+
+        }
+    </script>
+</head>
+<body>
+<img src="/resource/binary/page/{{ material.id }}/{{ page }}" border="0" id="fsimg" usemap="fsimgmap">
+
+<map name="fsimgmap" id="fsimgmap">
+    <area id="areaBack" shape="rect" coords="0,0, 100,200" class="mapArea"/>
+    <area id="areaMenu" shape="rect" coords="0,0, 100,200" class="mapArea" href="#menuDiv"/>
+    <area id="areaForw" shape="rect" coords="0,0, 100,200" class="mapArea"/>
+</map>
+<div id="menuDiv" style="display:none;">
+    {{ issue.volume }} {{ issue.issue_number }}<br>
+    Published {{ issue.publish_year }}/{{ issue.publish_month }}
+    <br><br>
+    Available materials:
+    {% for m in materials %}
+        {% if m.id == material.id %}
+            <li><a href="/webapp/reader/{{ issue.id }}/{{ page }}/?material={{ m.id }}">* {{ m }}</a>
+        {% else %}
+            <li><a href="/webapp/reader/{{ issue.id }}/{{ page }}/?material={{ m.id }}">{{ m }}</a>
+        {% endif %}
+    {% endfor %}
+    <br><br>
+    <div class="demo">
+
+        <p>
+            <input type="text" id="pageSlider" style="border:0; color:#f6931f; font-weight:bold;"/>
+        </p>
+
+        <div id="slider"></div>
+
+    </div>
+    <!-- End demo -->
+
+</div>
+
+
+<table width="100%">
+    <tr>
+        <td align="center">
+            <a href="#" id="lnkPrevious"><img src="/static/images/left_arrow_small.png" border="0" style="display:none;"
+                                              id="imgPrevious"></a>
+            {% if previous_issue %}
+                <a href="/webapp/reader/{{ previous_issue.id }}/0"><img
+                    src="/static/images/left_next_arrow_small.png" border="0"
+                    title="{{ previous_issue }}"></a>
+            {% endif %}
+            {% if next_issue %}
+                <a href="/webapp/reader/{{ next_issue.id }}/0"><img
+                    src="/static/images/right_next_arrow_small.png" border="0"
+                    title="{{ next_issue }}"></a>
+            {% endif %}
+            <a href="#" id="lnkNext"><img src="/static/images/right_arrow_small.png" border="0" style="display:none;"
+                                          id="imgNext"></a>
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>
+
+    

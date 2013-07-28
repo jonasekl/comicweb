@@ -1,0 +1,7 @@
+django
+requests
+simplejson
+rarfile
+MySQL-python
+django-registration
+django-profiles

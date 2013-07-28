@@ -1,0 +1,35 @@
+
+            /*
+            @import url("http://ajax.googleapis.com/ajax/libs/dojo/1.6/dojox/layout/resources/ExpandoPane.css");
+            */
+        .dojoxExpandoIcon {
+            background-image: url('http://ajax.googleapis.com/ajax/libs/dojo/1.6/dijit/themes/nihilo/images/spriteRoundedIconsSmall.png');
+
+        }
+
+        .dojoxExpandoTitle {
+            background: #F0F4FC url("http://ajax.googleapis.com/ajax/libs/dojo/1.6/dijit/themes/soria/images/tabContainerSprite.gif") repeat-x scroll 0pt -50px;
+            width: 14px;
+            cursor: pointer;
+            background-position: -60px 0px;
+            background-repeat: no-repeat;
+            height: 14px;
+        }
+
+        .thumbnail {
+            padding: 20px;
+            /*border-style: dotted;*/
+            -moz-box-shadow: 10px 10px 5px #888;
+            -webkit-box-shadow: 10px 10px 5px #888;
+            box-shadow: 10px 10px 5px #888;
+        }
+        .thumbnail:hover {
+            -moz-box-shadow: 5px 5px 2px #888;
+            -webkit-box-shadow: 5px 5px 2px #888;
+            box-shadow: 5px 5px 2px #888;
+
+        }
+        .tabinfo {
+            border: dotted 1px black;
+            padding: 20px;
+        }

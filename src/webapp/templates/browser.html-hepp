@@ -1,0 +1,113 @@
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8">
+       <link rel="stylesheet" href="/static/css/dojo/demo.css" media="screen">
+       <link rel="stylesheet" href="/static/css/dojo/style.css" media="screen">
+       <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.6/dijit/themes/claro/claro.css" media="screen">
+      <script src="http://ajax.googleapis.com/ajax/libs/dojo/1.6.0/dojo/dojo.xd.js" data-dojo-config="isDebug: true,parseOnLoad: true">     </script>
+       <!-- <script langugage="javascript" src="/static/dojo/dojo/dojo.js"></script>-->
+       <link rel"stylesheet" href="/static/css/comicweb_dojo.css" media="screen">
+    <script type="text/javascript" language="javascript">
+        dojo.require("dijit.layout.BorderContainer");
+        dojo.require("dijit.layout.TabContainer");
+        dojo.require("dijit.layout.ContentPane");
+        dojo.require("dojox.layout.ExpandoPane");
+
+        dojo.require("dijit.Tree");
+        dojo.require("dojo.fx.easing");
+        dojo.require("dijit.Dialog");
+        dojo.require("dijit.Tooltip");
+
+        dojo.require("dojo.data.ItemFileReadStore");
+        dojo.require("dijit.form.ComboBox");
+
+        dojo.require("dijit.layout.ContentPane");
+
+        dojo.ready(function() {
+            //alert('document is now loaded.');
+            console.log('dojo.ready');
+        });
+        </script> 
+        <title>Volume Browser</title>
+        <body class="claro">
+
+
+<div id="appLayout" class="demoLayout" data-dojo-type="dijit.layout.BorderContainer"
+     data-dojo-props="design: 'headline'">
+    <div class="centerPanel" data-dojo-type="dijit.layout.TabContainer"
+         data-dojo-props="region: 'center', tabPosition: 'bottom'" id="tabContainer">
+        <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="title: 'Group 1'">
+            <h4>Group 1 Content</h4>
+
+            <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et
+                dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip
+                ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
+                fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia
+                deserunt mollit anim id est laborum.</p>
+        </div>
+        <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="title: 'Group Two'">
+            <h4>Group 2 Content</h4>
+        </div>
+    </div>
+    <div class="edgePanel" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region: 'top'">Header content
+        (top)
+    </div>
+    <div id="leftCol" class="edgePanel" data-dojo-type="dojox.layout.ExpandoPane"
+         data-dojo-props="region: 'left', splitter: true" easeIn="dojo.fx.easing.backOut"
+         easeOut="dojo.fx.easing.backInOut">
+        <div class="edgePanel" data-dojo-type="dijit.layout.TabContainer" data-dojo-props="region: 'left'">
+
+            <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="title: 'Publishers'">
+                <div dojoType="dijit.Tree" id="publisher_tree" store="publishersStore" query="{type:'publisher'}"
+                     onfocus="console.log('user focus handler')"
+                     onblur="console.log('user blur handler')"
+                     label="Publishers" openOnClick="true" persist="false">
+                    <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="item">
+                        //this.getNodesByItem(item)[0].labelNode.innerHTML=item.name[0] + " was clicked";
+                        //console.log(item);
+                        //displaySeries(item);
+                        //displaySeriesByPublisher(item);
+     //                   displaySeriesByPublisher(item, true);
+                    </script>
+                </div>
+            </div>
+
+
+
+
+            <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="title: 'Series'">
+
+                <div dojoType="dijit.Tree" id="mytree" store="seriesStore" query="{type:'series'}"
+                     onfocus="console.log('user focus handler')"
+                     onblur="console.log('user blur handler')"
+                     label="Series" openOnClick="true" persist="false">
+                    <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="item">
+                        //this.getNodesByItem(item)[0].labelNode.innerHTML=item.name[0] + " was clicked";
+                        //console.log(item);
+                        //createTabFromSeries(item);
+                        displayBooksBySeries(item, true);
+                    </script>
+                </div>
+            </div>
+            <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="title: 'En annan'">
+                <p>Här vill jag ha en treeview per publisher</p>
+            </div>
+
+        </div>
+    </div>
+    <div class="edgePanel" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region: 'bottom'">Footer content
+        (bottom)
+    </div>
+</div>
+
+
+
+<!--
+            {% for volume in volumes %}
+                {{ volume }}
+            {% endfor %}
+
+-->
+        </body>
+    </head>
+</html>

@@ -1,0 +1,131 @@
+<html>
+	<head>
+		<script language="javascript" text="text/javascript" src="/static/jquery.js"></script>
+	<link rel="stylesheet" href="/static/autoSuggest.css" type="text/css" media="screen"/> 
+    <script type="text/javascript" src="/static/jquery.autoSuggest.js"></script> 
+    <link rel="stylesheet" href="/static/comicweb.css" type="text/css" media="screen"/> 
+    
+	<link rel="stylesheet" href="/static/prettyPhoto/css/prettyPhoto.css" type="text/css" media="screen" charset="utf-8" />
+	<script src="/static/prettyPhoto/js/jquery.prettyPhoto.js" type="text/javascript" charset="utf-8"></script>
+    <title>comicweb | $title</title>
+	</head>
+	<body>
+
+<div id="searchbox"> 
+    <form action="/json/search/auto" method="post"> 
+    	<input type="text" id="auto" name="main"> 
+    </form> 
+</div> 
+<a href="/webapp/recent" id="linkRecent">RECENT</a> <br/><br/>
+        {% if book_list %}
+            you are logged in as {{ current_user }} <br><br>
+
+    		{% for entry in book_list %}
+    			<a class="linkList" id="link_{{ entry.issue.id }}" >{{ entry.issue.volume }} V{{ entry.issue.volume.start_year }}  {{ entry.issue }}</a><br>
+    			<br>
+    			<div class="infoDiv" id="info_{{ entry.issue.id }}" style="display:none;">
+    				<table><tr><td valign="top"><img id="thumbnail_$comic.id" src="/resource/binary/thumbnail/{{ entry.issue.id }}"><br>
+    					<a href="/webapp/download/issue/{{ entry.issue.id }}" target="_blank"><img src="/static/images/download_arrow.png" border="0"></a>
+    					</td>
+    					<td><a href="/webapp/issues/{{ entry.issue.volume.id }}/">{{ entry.issue.volume }}</a> - {{ entry.issue }} <br>
+    						Writer:$comic.fields["Writer"]<br>
+    						Published: {{ entry.issue.publish_year }}/{{ entry.issue.publish_month }}<br>
+                            last read page: {{ entry.latest_reading.page }} <br>
+                            last read time: {{ entry.latest_reading.when }} <br>
+                        <br>
+
+
+                        </td>
+			    		<td valign="top"><!--
+						<a href="/reader/$comic.id/$comic.get_latest_page()" rel="prettyPhoto[$comic.id]"><img src="/static/images/Slide-Show-icon.png" border="0"></a><br>-->
+			    			<a href="/webapp/reader/{{ entry.issue.id }}/{{ entry.latest_reading.page }}" target="_blank"><img src="/static/images/newwindow.png" border="0"></a><br><a href="" id="listLink_$comic.id" class="listLink">add to list</a></td></tr>
+			    	<tr><td colspan="3">
+			    	$:comic.fields["websummary"]</td></tr></table>
+			    	</div>
+            {% endfor %}
+        {% else %}
+            {% if list_type == 'recent_list' %}
+                You have not read anything yet, it seems.
+            {% else %}
+                The requested volume has no issues.
+            {% endif %}
+        {% endif %}
+
+<div id="readerDiv" style="display:none;"><img id="readerImg"></div>
+<script type="text/javascript"> 
+	
+    jQuery(document).ready(function() {
+    		// autosuggest
+        jQuery(function(){
+            jQuery("input[name=main]").autoSuggest("/resource/json/autosuggest/",
+                    { minChars: 2,
+                      resultClick: function(data){
+                     	 //alert(data.attributes.value);
+                      	 window.location = '/webapp/issues/'+data.attributes.id;
+                      }
+                      , queryParam: '',
+                      min:"no"
+                      });
+ 
+            }); //end autosuggest
+            
+       		
+       		//linklist
+       		$(".linkList").each(function(){
+       				$(this).click(function(id){
+       						var id = $(this).attr("id").substring($(this).attr("id").indexOf("_")+1);
+       						if($("#info_"+id).is(":hidden")){
+       							$("#info_"+id).show("slow")
+       							//$.getJSON('/json/comicbook/getthumbnailurl/'+id, function(data) {
+								//			$("#thumbnail_"+id).attr("src",data);
+								//		}) ;
+                                    $("#thumbnail_"+id).attr('src', '/thumbnail/'+id)
+       							}else{
+       								$("#info_"+id).hide("slow")
+       							}
+       					});
+       			}); //end linklist
+
+       		//readlinks
+       		$(".readLink").each(function(){
+       				$(this).click(function(id){
+       						var id = $(this).attr("id").substring($(this).attr("id").indexOf("_")+1);
+       						$("#readerDiv").show();
+       						//$("#readerDiv").load("/reader/" + id + "/2")
+       						$("#readerImg").attr("src", "/reader/" + id + "/1")
+       					});
+       			}); //end readlinks
+       		
+       		$("a[rel^='prettyPhoto']").prettyPhoto({	overlay_gallery: false});
+            
+
+       			
+       		$("#advSearch").click(function(){
+       			$('#advancedSearch').is(':hidden') ? $('#advancedSearch').show('slow') : $('#advancedSearch').hide('slow')
+       			});
+         // list link
+            $('.listLink').each(function(){
+                $(this).click(function(){
+                    var id = $(this).attr("id").substring($(this).attr("id").indexOf("_")+1);
+                    console.log('add ' + id + ' to list');
+                    $.ajax({
+                        url:        '/ajax/addToList',
+                        type:       'POST',
+                        data:       'comicid=' + id
+//                        data:       '['+{'comicid' : id}+']',
+//                        data:       '[comicid'  :   id +']',
+//                        dataType:   'json'
+                    }).done(function(res){
+                        console.log(id + ' has been saved to list');
+                    });
+                    return false;
+                });
+            });    // end list link 
+
+
+        }); //end ready
+</script> 
+		
+	</body>
+
+</html>    

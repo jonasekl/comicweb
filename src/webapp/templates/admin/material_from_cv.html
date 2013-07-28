@@ -1,0 +1,33 @@
+{% extends "admin/base_site.html" %}
+{% load admin_urls %}
+
+{% block content %}
+        <script language="javascript" text="text/javascript" src="/static/jquery.js"></script>
+    <script language="javascript" src="/static/jquery-ui-1.8.13.custom/js/jquery-ui-1.8.13.custom.min.js"></script>
+    <!-- jquery UI -->
+    <link rel="stylesheet" href="/static/jquery-ui-1.8.13.custom/development-bundle/themes/base/jquery.ui.all.css">
+    <!--	<script src="../../jquery-1.5.1.js"></script>  -->
+    <script src="/static/jquery-ui-1.8.13.custom/development-bundle/ui/jquery.ui.core.js"></script>
+    <script src="/static/jquery-ui-1.8.13.custom/development-bundle/ui/jquery.ui.widget.js"></script>
+    <script src="/static/jquery-ui-1.8.13.custom/development-bundle/ui/jquery.ui.mouse.js"></script>
+    <script src="/static/jquery-ui-1.8.13.custom/development-bundle/ui/jquery.ui.slider.js"></script>
+    <link rel="stylesheet" href="/static/jquery-ui-1.8.13.custom/development-bundle/demos/demos.css">
+        <script language="javascript">
+            var API_KEY = '{{ API_KEY }}';
+
+            $(document).ready(function(){
+
+            });
+        </script>
+{{ qs }}<hr>
+    <form action="" method="post">{% csrf_token %}
+        {% for e in qs %}
+             <input id="material_{{ e.id }}" name="material_{{ e.id }}" /><img src="/resource/binary/page/{{ e.id }}/0/" height="150" />{{ e }}<br/>
+        {% endfor %}
+
+<div style="display:none;">{{ form }}</div> 
+<input type="hidden" name="action" value="populate_from_cv" />
+<input type="hidden" name="post" value="yes" />
+<input type="submit" value="Spara" />
+    </form>
+{% endblock %}

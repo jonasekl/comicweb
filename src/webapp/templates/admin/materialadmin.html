@@ -1,0 +1,81 @@
+{% extends "admin/base_site.html" %}
+{% load admin_urls %}
+
+{% block content %}
+        <script language="javascript" text="text/javascript" src="/static/jquery.js"></script>
+    <script language="javascript" src="/static/jquery-ui-1.8.13.custom/js/jquery-ui-1.8.13.custom.min.js"></script>
+    <!-- jquery UI -->
+    <link rel="stylesheet" href="/static/jquery-ui-1.8.13.custom/development-bundle/themes/base/jquery.ui.all.css">
+    <!--	<script src="../../jquery-1.5.1.js"></script>  -->
+    <script src="/static/jquery-ui-1.8.13.custom/development-bundle/ui/jquery.ui.core.js"></script>
+    <script src="/static/jquery-ui-1.8.13.custom/development-bundle/ui/jquery.ui.widget.js"></script>
+    <script src="/static/jquery-ui-1.8.13.custom/development-bundle/ui/jquery.ui.mouse.js"></script>
+    <script src="/static/jquery-ui-1.8.13.custom/development-bundle/ui/jquery.ui.slider.js"></script>
+    <link rel="stylesheet" href="/static/jquery-ui-1.8.13.custom/development-bundle/demos/demos.css">
+        <script language="javascript">
+            var API_KEY = '{{ API_KEY }}';
+
+            $(document).ready(function(){
+                $('.lnk_show_issues').each(function( ){
+                    $(this).click(function(){
+                        var id = $(this).attr('id');
+                        ($('#issues_'+id).is(':hidden')) ? $('#issues_' + id).show('slow') : $('#issues_' + id).hide('slow');
+                    });
+                });
+        
+                $('.rb_issue').each(function(){
+                    $(this).click(function(){
+                        var material_id = $(this).attr('name');
+                        var cv_issue_id = $(this).attr('id');
+                        cvIds = $.parseJSON( $('#cv_ids').attr('value')  );
+                        if ( cvIds == null ) cvIds = {};
+                        
+                        cvIds[material_id] = {'material_id' : material_id, 'cv_issue_id' : cv_issue_id};
+                        console.log('setting cv_ids to ' +  JSON.stringify(cvIds));
+                        $('#cv_ids').attr('value', JSON.stringify(cvIds));
+                    });
+                });
+            });
+
+        function queryCV( cvid ){
+            $.ajax({
+                url : 'http://api.comicvine.com/issue/' + cvid + '/?api_key=' + API_KEY +'&format=jsonp&json_callback=jsonp_callback',
+                dataType : 'jsonp',
+                success : function(res){
+                    console.log(res);
+                }
+            });
+        }
+        function jsonp_callback( resObj ){
+            console.log(resObj);
+            $('#issueInfo').html('<a target="_blank" href="' + resObj['results']['site_detail_url'] + '">issue@cv</a><br/>' + resObj['results']['volume']['name']  + ' ' + resObj['results']['issue_number'] + '<br/><img src="' + resObj['results']['image']['thumb_url'] + '">&nbsp;' + resObj['results']['description']);
+            $('#issueInfo').dialog();
+        }
+        </script>
+<form action="" method="post">{% csrf_token %}
+<div id="issueInfo" style="display:none;"></div>
+{% for e in res %}
+    {% if  not e.volumes %}
+        Sorry, found no volume candidates for {{ e.material }}<br>
+    {% else %}
+        <h2><img src="/resource/binary/page/{{ e.material.id }}/0/" height="200"/> {{ e.material }}</h2>
+        {% for v in e.volumes %}
+            <h3><img src="{{ v.image.medium_url }}" alt="{{ v.name }} ({{ v.start_year }})"><a class="lnk_show_issues" id="{{ v.id }}"> {{ v.name }} ({{v.start_year }})</a></h3>
+            <div id="issues_{{ v.id }}" style="display:none;">
+            {% for i in v.issues %}
+                <input type="radio" class="rb_issue" name="{{ e.material.id }}" id="{{ i.id }}">{{ i.issue_number }} - {{ i.name }} &nbsp; [<a href="#" onclick="queryCV('{{ i.id }}');">lookup</a>]<br />
+            {% endfor %}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endfor %}
+<div style="display:none">
+{{ form }}
+</div>
+<input type="hidden" name="cv_ids" id="cv_ids" />
+<input type="hidden" name="action" value="lookup_issue" />
+<input type="hidden" name="post" value="yes" />
+<input type="submit" value="Spara" />
+</form>
+
+{% endblock %}

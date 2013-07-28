@@ -1,0 +1,166 @@
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8">
+       <link rel="stylesheet" href="/static/css/dojo/demo.css" media="screen">
+       <link rel="stylesheet" href="/static/css/dojo/style.css" media="screen">
+       <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.6/dijit/themes/claro/claro.css" media="screen">
+      <script src="http://ajax.googleapis.com/ajax/libs/dojo/1.6.0/dojo/dojo.xd.js" data-dojo-config="isDebug: true,parseOnLoad: true">     </script>
+ <script language="javascript" text="text/javascript" src="/static/jquery.js"></script>
+       <!-- <script langugage="javascript" src="/static/dojo/dojo/dojo.js"></script>-->
+       <link rel"stylesheet" href="/static/css/comicweb_dojo.css" media="screen">
+        <style type="text/css" media="screen">
+        @import url("http://ajax.googleapis.com/ajax/libs/dojo/1.6/dojox/layout/resources/ExpandoPane.css");
+
+        .thumbnail {
+            padding: 20px;
+            /*border-style: dotted;*/
+            -moz-box-shadow: 10px 10px 5px #888;
+            -webkit-box-shadow: 10px 10px 5px #888;
+            box-shadow: 10px 10px 5px #888;
+        }
+        .thumbnail:hover {
+            -moz-box-shadow: 5px 5px 2px #888;
+            -webkit-box-shadow: 5px 5px 2px #888;
+            box-shadow: 5px 5px 2px #888;
+
+        }      
+        .dojoxExpandoContent {
+            overflow:auto;
+        }
+      
+        </style>
+    <script type="text/javascript" language="javascript">
+        dojo.require("dijit.layout.BorderContainer");
+        dojo.require("dijit.layout.TabContainer");
+        dojo.require("dijit.layout.ContentPane");
+        dojo.require("dojox.layout.ExpandoPane");
+
+        dojo.require("dijit.Tree");
+        dojo.require("dojo.fx.easing");
+        dojo.require("dijit.Dialog");
+        dojo.require("dijit.Tooltip");
+
+        dojo.require("dojo.data.ItemFileReadStore");
+        dojo.require("dijit.form.ComboBox");
+
+        dojo.require("dijit.layout.ContentPane");
+
+        dojo.ready(function() {
+            //alert('document is now loaded.');
+            console.log('dojo.ready');
+            obj = dijit.byId("bottomPane") ;
+            obj.resize({h:50});
+        });
+        function volumeInfo( volObj ){
+            obj = dijit.byId("bottomPane") ;
+            obj.resize({h:200});
+            dijit.byId('appLayout').layout();
+            dojo.byId('div_thumbs').innerHTML = '';
+            try{
+                //console.log('url : ' + '/resource/json/issues/' + volObj.volume_id + '/?user={{ user.username }}' );
+                dojo.xhrGet({
+                    headers : {'X-COMICWEB-USER' : '{{ user.username }}'},
+                    url :   '/resource/json/issues/' + volObj.volume_id ,
+                    handleAs:   'json',
+                    load    :   function ( resObj ){
+                                    //console.log(resObj);
+                                    issues = resObj;
+                                    for( j=0; j<issues.length; j++){                                        try{
+                                            _page = (issues[j]['reading']==null) ? 0 : issues[j]['reading'].page;
+                                            link=dojo.create("a", { 
+                                                href: "/webapp/reader/" + issues[j]['issue'].id + '/' + _page, 
+                                                target: '_blank'
+                                             }, dojo.byId('div_thumbs'), 'first');
+           
+                                            console.log(issues[j]); 
+                                            img = dojo.create('img', {
+                                                src : "/resource/binary/thumbnail/" + issues[j]['issue'].id,
+                                                class : 'thumbnail',
+                                                id : 'issue_' + issues[j]['issue'].id
+                                            },link);//dojo.byId('bottomPane'));
+                                            _label = "<h3>"  + unescape(volObj.volume_name)  + "</h3>Issue:" + issues[j]['issue'].issue_number + '<br>'
+                                                + 'Published:' + issues[j]['issue'].publish_year + '/' +  issues[j]['issue'].publish_month;
+                                            if (issues[j]['reading'] != null){
+                                                _label += "<hr>last read page:" + issues[j]['reading'].page + "<br>when:" + issues[j]['reading'].when;
+                                            }
+                                    
+                                            tooltip = new dijit.Tooltip({
+                                                connectId: ["issue_" + issues[j]['issue'].id],
+                                                label: _label,
+                                                position: "above"
+                                            });
+                                        }catch(ex){
+                                            alert(ex);
+                                            console.log(ex);
+                                        }
+                                    }
+                                    //obj.set('content', s);
+                                },
+                    error   :   function ( error ){
+                                    console.log(error);
+                                }
+                });
+            }catch( ex ){
+                alert(ex);
+                console.error(ex);
+            }
+
+        }
+
+        
+        </script> 
+        <title>Volume Browser {{ publisher }}</title>
+        <body class="claro">
+<div id="appLayout" class="demoLayout" data-dojo-type="dijit.layout.BorderContainer"
+     data-dojo-props="design: 'headline'">
+    <div class="edgePanel" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region: 'top'" id="topPane">
+        <table border="0" width="100%">
+            <tr>
+                <td>
+        Publisher : 
+        <select id="id_publisher" onchange="document.location.href='../' + this.value + '/';">
+        {% for pub in publishers %}
+           {% ifequal pub.id publisher_id %}
+            <option value="{{ pub.id }}" selected="selected">{{ pub.name }}</option>
+            {% else %} 
+            <option value="{{ pub.id }}">{{ pub.name }}</option>
+            {% endifequal %}
+        {% endfor %}
+        </select>
+                </td>
+
+                <td>
+                &nbsp;
+                </td>
+                <td style="text-align:right;" align="right">
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <div id="userInfo" style="valign:right">Hi, {{ user.username }}</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+        <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="title: 'Group 1', region:'center'">
+            <h4>{{ publisher.name }} volumes</h4>
+
+
+            {% for volume in volumes %}
+                <a href="#" alt="{{ volume.name }}" onclick="volumeInfo({'volume_name' : '{{ volume.name|urlencode }}', 'volume_id' : '{{ volume.id }}'});return false;"  >
+                    <img src="/resource/binary/thumbnail/{{ volume.get_latest_issue.id }}" alt="{{ volume.name }}" class="thumbnail" id="volume_{{ volume.id }}" />
+                </a>
+                <div data-dojo-type="dijit.Tooltip" data-dojo-props="connectId:'volume_{{ volume.id }}',position:['above']">
+                    <h5>{{ volume.name }}</h5>
+                    {{ volume.description|safe }}
+                </div>
+             {% endfor %}
+        </div>
+            <div class="edgePanel" id="bottomPane"  
+                data-dojo-type="dojox.layout.ExpandoPane"
+                style="height:200px"  
+                data-dojo-props="region:'bottom',title:'issues',showTitle:'true',closable:'true',startExpanded:'false',style:'height:300px',splitter:'true',scrolling:'true'" 
+                easeIn="dojo.fx.easing.backOut" 
+                easeOut="dojo.fx.easing.backInOut" >
+                <div id="div_thumbs" style="overflow: auto; ">div_thumbs</div>
+                 </div>
+        </div>
+       </body>
+</html>

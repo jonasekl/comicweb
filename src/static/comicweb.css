@@ -1,0 +1,38 @@
+
+/** general **/
+			body{
+				background-color:PowderBlue;
+			}
+
+
+
+/**  classes **/
+			.linkList{
+				font-size:20px;
+				cursor:hand;
+			}
+			.infoDiv{
+				width:75%;
+				border:dotted;
+				padding: 10px;
+				background-color:white;
+			}
+
+/** ID's **/
+		#advSearch{
+			cursor:hand;
+			color:black;
+			}
+			
+		#readerDiv{
+			width:90%;
+			height:90%;
+			}			
+		#linkRecent{
+            cursor:hand;
+            color:black;
+        }	
+/** fullscreen stuff **/
+			.mapArea{ cursor:hand; }
+			#menuDiv{ background:#c0c0c0;display:none;  }
+			#menuDiv a{font-color:black;}
